@@ -117,20 +117,25 @@ class draftPositionMarkov:
             w = copy.copy(w2)
             i += 1
         w[w<1e-6] = 0
+
+        if i==maxiter:
+            sys.stdout.write('WARNING: did not converge')
+        else:
+            sys.stdout.write('converged in {} steps'.format(i))
         return w
 
     def pretty_print(self, ww):
         ofp = sys.stdout
         ofp.write('start ')
         for i in self.picks_options:
-            ofp.write('%2d' % i),
+            ofp.write('%2d ' % i),
         ofp.write('\n')
         ofp.write('************************\n')
         for i in range(self.draft_range):
             tmp = ww[-(len(self.picks_options)):,i]*100
             ofp.write('%02d ' % (i+1))
             for t in tmp:
-                ofp.write('%4.1f ' % t)
+                ofp.write('%5.1f ' % t)
             ofp.write('\n')
 
     def renormalize_dict(self, dict):
@@ -138,7 +143,8 @@ class draftPositionMarkov:
         tmp = {}
         for k, v in dict.items():
             tmp[k] = v/(1.0*dict_sum)
-        print 'renomr', tmp
+        if abs(dict_sum-1)>1e-3:
+            sys.stdout.write('renorm {} {}\n'.format(tmp, dict_sum))
         return tmp
 
 if __name__=='__main__':
