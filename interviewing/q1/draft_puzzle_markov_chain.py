@@ -79,7 +79,6 @@ class draftPositionMarkov:
         nopt = len(self.picks_options)
         # first, the probabilities to land a draft pick we are
         # interested in
-        delta = np.zeros((self.draft_range+nopt,))
         for i in range(nopt):
             idx = nopt - i
             draft_idx = self.rank_to_index(self.picks_options[i])
@@ -121,12 +120,12 @@ class draftPositionMarkov:
     def pretty_print(self, ww):
         ofp = sys.stdout
         ofp.write('start ')
-        for i in dpm.picks_options:
+        for i in self.picks_options:
             ofp.write('%2d' % i),
         ofp.write('\n')
         ofp.write('************************\n')
-        for i in range(dpm.draft_range):
-            tmp = ww[-(len(dpm.picks_options)):,i]*100
+        for i in range(self.draft_range):
+            tmp = ww[-(len(self.picks_options)):,i]*100
             ofp.write('%02d ' % (i+1))
             for t in tmp:
                 ofp.write('%4.1f ' % t)
