@@ -5,8 +5,11 @@ import numpy as np
 
 
 class draftPositionMarkov:
-    def __init__(self, updown={3: 0.6, -2: 0.4}, draft_limits=[1,30], picks_options=[1,5]):
-        self.updown = updown
+    def __init__(self,
+                 updown={3: 0.6, -2: 0.4},
+                 draft_limits=[1,30],
+                 picks_options=[1,5]):
+        self.updown = self.renormalize_dict(updown)
         self.draft_limits = draft_limits
         self.draft_range = 1+draft_limits[1]-draft_limits[0]
 
@@ -99,13 +102,12 @@ class draftPositionMarkov:
 
     def converge(self, tol=1e-12, maxiter = 100):
         '''
-        :return: converged taransition matrix
+        :return: converged transition matrix
 
-        uses the method of exponentiating by squaring
+        uses the method of exponentiation by squaring
         '''
 
         w = copy.copy(self.transition_matrix)
-        w2 = w.dot(w)
         cstat = 9e9
         i = 0
         while i < maxiter and cstat>tol:
@@ -131,16 +133,36 @@ class draftPositionMarkov:
                 ofp.write('%4.1f ' % t)
             ofp.write('\n')
 
+    def renormalize_dict(self, dict):
+        dict_sum = np.sum([v for k, v in dict.items()])
+        tmp = {}
+        for k, v in dict.items():
+            tmp[k] = v/(1.0*dict_sum)
+        print 'renomr', tmp
+        return tmp
+
 if __name__=='__main__':
     updown={3: 0.6, -2: 0.4}
     picks_options=[1,5]
 
     for ia, a in enumerate(sys.argv):
+
         if a=='-picks':
             tmp = []
             for t in sys.argv[ia+1].split(','):
                 tmp.append(t)
             picks_options = tmp[:]
+        if a=='-updown':
+            tmp = {}
+            for i, t in enumerate(sys.argv[ia+1].split(',')):
+                idx = i%2
+                if idx==0:
+                    k = int(t)
+                else:
+                    v = float(t)
+                    tmp[k] = v
+
+            updown = copy.copy(tmp)
 
     dpm = draftPositionMarkov(updown=updown, picks_options=picks_options)
     ww = dpm.converge()
