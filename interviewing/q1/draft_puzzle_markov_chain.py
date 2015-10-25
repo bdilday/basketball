@@ -2,7 +2,7 @@
 import sys
 import copy
 import numpy as np
-
+from numpy import linalg as la
 
 class draftPositionMarkov:
     def __init__(self,
@@ -30,7 +30,7 @@ class draftPositionMarkov:
 
         lottery = np.genfromtxt(self.picks_file,
                              delimiter=',',
-                             skip_header=1)[0:,1:]
+                             skip_header=0)[0:,0:]
 
         lottery = lottery.transpose()
         nrow_lottery, ncol_lottery = np.shape(lottery)
@@ -53,12 +53,7 @@ class draftPositionMarkov:
         return np.zeros((nx, nx))
 
     def rank_clamp(self, x):
-        if x<self.draft_limits[0]:
-            return self.draft_limits[0]
-        elif x>self.draft_limits[1]:
-            return self.draft_limits[1]
-        else:
-            return x
+        return min(max(x, self.draft_limits[0]), self.draft_limits[1])
 
     def index_to_rank(self, idx):
         return self.rank_clamp(idx+1)
@@ -80,12 +75,14 @@ class draftPositionMarkov:
     def make_transition_matrix(self):
         mm = self.initialize_matrix()
         nopt = len(self.picks_options)
+
         # first, the probabilities to land a draft pick we are
         # interested in
         for i in range(nopt):
             idx = nopt - i
             draft_idx = self.rank_to_index(self.picks_options[i])
-            mm[-idx,:] = self.picks_matrix[:,draft_idx].dot(self.rank_matrix)
+            mm[-idx,:] = self.picks_matrix[draft_idx,:]
+
 
         # now the others
         delta = mm[-nopt:,:].sum(0)
@@ -107,22 +104,9 @@ class draftPositionMarkov:
         uses the method of exponentiation by squaring
         '''
 
-        w = copy.copy(self.transition_matrix)
-        cstat = 9e9
-        i = 0
-        while i < maxiter and cstat>tol:
-            w2 = w.dot(w)
-            cstat = self.convergence_stat(w, w2)
-    #        print 'i', i, 'cstat', cstat
-            w = copy.copy(w2)
-            i += 1
-        w[w<1e-6] = 0
-
-        if i==maxiter:
-            sys.stdout.write('WARNING: did not converge')
-        else:
-            sys.stdout.write('converged in {} steps'.format(i))
-        return w
+        u = la.matrix_power(self.transition_matrix, 2**20)
+        u[u<1e-6] = 0
+        return u
 
     def pretty_print(self, ww):
         ofp = sys.stdout
