@@ -3,6 +3,8 @@ import sys
 import copy
 import numpy as np
 from numpy import linalg as la
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 class draftPositionMarkov:
     def __init__(self,
@@ -189,6 +191,27 @@ class draftPositionMarkov:
             v = self.transition_matrix.dot(v)
             ans = np.column_stack((ans, v))
         return ans
+
+    def series_of_bar_charts(self, n=10, idx=4):
+        '''
+        :param n: number of seasons
+        :param idx: index of the starting position
+        :return: 2d array, (30+number_of_absorbing_states) x n
+
+        To make a gif, uncomment the savefig statement, and then convert png to gif
+        e.g., with ImageMagick covert
+        convert -delay 20 -loop 0 *.png animation.gif
+        '''
+        ans = self.generate_sequence(n=n, idx=idx)
+        for i in range(100):
+            plt.clf()
+            plt.bar(np.array(range(1, 1+self.transition_matrix.shape[0]))-0.5, ans[:, i], color='steelblue')
+            plt.ylim(0, 0.5)
+            plt.text(1, 0.45, 'year= %05d' % i)
+            # customized text labels, change as needed
+            plt.text(31.5, 0.45, '5th', fontsize=10, horizontalalignment='center')
+            plt.text(30.5, 0.28, '1st', fontsize=10, horizontalalignment='center')
+            #plt.savefig('pngs/mk_%05d.png' % i)
 
 
 if __name__=='__main__':
