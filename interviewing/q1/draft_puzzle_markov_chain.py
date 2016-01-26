@@ -127,9 +127,69 @@ class draftPositionMarkov:
         tmp = {}
         for k, v in dict.items():
             tmp[k] = v/(1.0*dict_sum)
-        if abs(dict_sum-1)>1e-3:
-            sys.stdout.write('renorm {} {}\n'.format(tmp, dict_sum))
+        # if abs(dict_sum-1)>1e-3:
+        #     sys.stdout.write('renorm {} {}\n'.format(tmp, dict_sum))
         return tmp
+
+    def brute_force(self, start_rank=5, nmax=1000):
+        np.random.seed(10212015)
+        picks = {1: 0, 5: 0}
+        updown_prob = []
+        updown_val = []
+        for k, v in self.updown.items():
+            updown_prob.append(float(v))
+            updown_val.append(int(k))
+
+        data = {}
+        data['ranks'] = []
+        data['idx'] = []
+        data['nseas'] = []
+        data['pick'] = []
+        data['cur_rank'] = []
+
+        i = 0
+        tot = 0
+        cur_rank = start_rank
+
+        old_i = 0
+        while tot<nmax:
+            if i%10000==0:
+                print i, tot, picks, cur_rank
+
+            x = np.random.multinomial(1, self.picks_matrix[:,cur_rank-1])
+            pick = np.where(x>0)[0][0]+1
+            if pick in self.picks_options:
+                picks[pick] += 1
+                print 'PICK!', i, tot, picks, cur_rank, self.renormalize_dict(picks)
+                data['idx'].append(i)
+                data['nseas'].append(i-old_i)
+                data['pick'].append(pick)
+                data['cur_rank'].append(cur_rank)
+                old_i = i
+                cur_rank = start_rank
+                tot += 1
+
+            else:
+                x = np.random.multinomial(1, updown_prob)
+                idx = np.where(x>0)[0][0]
+                delta = updown_val[idx]
+                cur_rank = self.rank_clamp(cur_rank + delta)
+            i += 1
+
+            data['ranks'].append(cur_rank)
+
+        return picks, data
+
+
+    def generate_sequence(self, n=10, idx=4):
+        v = np.zeros((self.transition_matrix.shape[0], 1))
+        v[idx] = 1
+        ans = copy.deepcopy(v)
+        for i in range(n):
+            v = self.transition_matrix.dot(v)
+            ans = np.column_stack((ans, v))
+        return ans
+
 
 if __name__=='__main__':
     updown={3: 0.6, -2: 0.4}
