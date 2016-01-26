@@ -203,7 +203,7 @@ class draftPositionMarkov:
         convert -delay 20 -loop 0 *.png animation.gif
         '''
         ans = self.generate_sequence(n=n, idx=idx)
-        for i in range(100):
+        for i in range(n):
             plt.clf()
             plt.bar(np.array(range(1, 1+self.transition_matrix.shape[0]))-0.5, ans[:, i], color='steelblue')
             plt.ylim(0, 0.5)
